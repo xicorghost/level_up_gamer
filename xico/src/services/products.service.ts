@@ -10,7 +10,7 @@ export const PRODUCTS: Product[] = [
     name: 'Código Aleatorio De Steam',
     price: 29990,
     description: 'Un código único con una combinación de letras y números que sirve para activar y desbloquear un juego o software en tu cuenta de Steam.',
-    image: 'scat_weed.png',
+    image: '/assets/cat_weed.png',
     stock: 50,
   },
   {
@@ -19,7 +19,7 @@ export const PRODUCTS: Product[] = [
     name: 'Monopoly',
     price: 24990,
     description: 'Un juego de mesa en el que los jugadores compran, venden e intercambian propiedades inmobiliarias.',
-    image: 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Monopoly',
+    image: '/assets/monopoly.png',
     stock: 30,
   },
   {
@@ -28,7 +28,7 @@ export const PRODUCTS: Product[] = [
     name: 'Controlador Inalámbrico Xbox Series X',
     price: 59990,
     description: 'Ofrece una experiencia de juego cómoda con botones mapeables y respuesta táctil mejorada.',
-    image: 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Xbox+Controller',
+    image: '/assets/control.png',
     stock: 25,
   },
   {
@@ -37,7 +37,7 @@ export const PRODUCTS: Product[] = [
     name: 'Auriculares Gamer HyperX Cloud II',
     price: 79990,
     description: 'Sonido envolvente de calidad con micrófono desmontable y almohadillas de espuma viscoelástica.',
-    image: 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Headset',
+    image: '/assets/audifonos.png',
     stock: 20,
   },
   {
@@ -46,7 +46,7 @@ export const PRODUCTS: Product[] = [
     name: 'PlayStation 5',
     price: 549990,
     description: 'Consola de última generación de Sony con gráficos impresionantes y tiempos de carga ultrarrápidos.',
-    image: 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=PS5',
+    image: '/assets/play.png',
     stock: 10,
   },
   {
@@ -55,7 +55,7 @@ export const PRODUCTS: Product[] = [
     name: 'PC Gamer ASUS ROG Strix',
     price: 1299990,
     description: 'Potente equipo diseñado para gamers exigentes con los últimos componentes.',
-    image: 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Gaming+PC',
+    image: '/assets/pc_gamer.png',
     stock: 5,
   },
   {
@@ -64,7 +64,7 @@ export const PRODUCTS: Product[] = [
     name: 'Silla Gamer Secretlab Titan',
     price: 349990,
     description: 'Diseñada para el máximo confort con soporte ergonómico y personalización ajustable.',
-    image: 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Gaming+Chair',
+    image: '/assets/silla_gamer.png',
     stock: 15,
   },
   {
@@ -73,7 +73,7 @@ export const PRODUCTS: Product[] = [
     name: 'Mouse Gamer Logitech G502 HERO',
     price: 49990,
     description: 'Sensor de alta precisión y botones personalizables para control preciso.',
-    image: 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Gaming+Mouse',
+    image: '/assets/mauu.png',
     stock: 40,
   },
 ];
