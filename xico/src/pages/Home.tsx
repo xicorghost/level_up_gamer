@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 //import type { Section, Product, Order } from '../types';
-import type { Section, Product, CartItem } from '../types';
+import type { Section, Product, CartItem } from '../types/index';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { ProductCard } from '../components/ProductCard';

@@ -1,7 +1,7 @@
 // src/components/admin/ProductManagement.tsx
 
 import React, { useState } from 'react';
-import type { Product } from '../../types';
+import type { Product } from '../../types/index';
 import { PRODUCTS, CATEGORIES } from '../../services/products.service';
 
 export const ProductManagement: React.FC = () => {

@@ -1,7 +1,7 @@
 // src/pages/AdminDashboard.tsx
 
 import React, { useState } from 'react';
-import type { AdminSection } from '../types';
+import type { AdminSection } from '../types/index';
 import { AdminLogin } from '../components/admin/AdminLogin';
 import { ProductManagement } from '../components/admin/ProductManagement';
 import { UserManagement } from '../components/admin/UserManagement';

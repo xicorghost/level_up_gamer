@@ -1,7 +1,7 @@
 // src/hooks/useReviews.ts
 
 import { useState } from 'react';
-import type { Review, RatingData } from '../types';
+import type { Review, RatingData } from '../types/index';
 
 const INITIAL_REVIEWS: Record<string, Review[]> = {
   LL001: [

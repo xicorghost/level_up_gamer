@@ -1,3 +1,4 @@
+//Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 // ===== PRODUCT =====
 export interface Product {
   code: string;
