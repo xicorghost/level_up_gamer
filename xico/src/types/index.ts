@@ -1,3 +1,4 @@
+//types/index.ts
 //Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 // ===== PRODUCT =====
 export interface Product {
