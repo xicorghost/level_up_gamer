@@ -1,543 +1,505 @@
 // src/pages/Home.tsx
 
-import React, { useState } from 'react';
-//import type { Section, Product, Order } from '../types';
-import type { Section, Product, CartItem } from '../types';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import type { 
+    Section, 
+    Product, 
+    CheckoutData, 
+    CompraRequestDTO, 
+    BoletaResult 
+} from '../types';
+
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { ProductCard } from '../components/ProductCard';
 import { CustomAlert } from '../components/CustomAlert';
 import { ReviewModal } from '../components/ReviewModal';
+
+// Componentes del flujo de compra
+import { CheckoutForm } from '../components/CheckoutForm';
+import { PurchaseResult } from '../components/PurchaseResult';
+
+
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import { useReviews } from '../hooks/useReviews';
 import { productService, CATEGORIES } from '../services/products.service';
+import { ADMIN_CREDENTIALS } from '../types';
+
+/* -------------------- CONFIG & STYLES -------------------- */
+
+// 🛑 URL BASE DE TU API DE SPRING BOOT
+const API_BASE_URL = 'http://localhost:8080/api'; 
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: '1200px',
-  margin: '0 auto',
-  padding: '20px',
+  maxWidth: '1200px',
+  margin: '0 auto',
+  padding: '20px',
 };
 
 const sectionStyle: React.CSSProperties = {
-  backgroundColor: '#0f1f1f',
-  border: '2px solid #00ff9f',
-  padding: '30px',
-  marginBottom: '30px',
-  boxShadow: '0 0 20px rgba(0, 255, 159, 0.3)',
+  backgroundColor: '#0f1f1f',
+  border: '2px solid #00ff9f',
+  padding: '25px',
+  boxShadow: '0 0 20px rgba(0,255,159,.25)',
 };
 
 const titleStyle: React.CSSProperties = {
-  color: '#00ff9f',
-  fontSize: '36px',
-  marginBottom: '20px',
-  textShadow: '0 0 10px #00ff9f',
+  color: '#00ff9f',
+  textShadow: '0 0 10px #00ff9f',
 };
 
 const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '10px',
-  backgroundColor: '#0a0a0a',
-  border: '2px solid #00ff9f',
-  color: '#00ff9f',
-  fontFamily: 'monospace',
-  fontSize: '18px',
+  width: '100%',
+  padding: '10px',
+  background: '#0a0a0a',
+  border: '2px solid #00ff9f',
+  color: '#00ff9f',
+  fontFamily: 'monospace',
 };
 
 const buttonStyle: React.CSSProperties = {
-  backgroundColor: '#1a4d4d',
-  color: '#00ff9f',
-  border: '2px solid #00ff9f',
-  padding: '12px 30px',
-  fontFamily: 'monospace',
-  fontSize: '22px',
-  cursor: 'pointer',
-  width: '100%',
-  marginTop: '10px',
-  transition: 'all 0.3s',
+  width: '100%',
+  marginTop: '10px',
+  padding: '12px',
+  background: '#1a4d4d',
+  border: '2px solid #00ff9f',
+  color: '#00ff9f',
+  fontFamily: 'monospace',
+  cursor: 'pointer',
 };
 
-const formGroupStyle: React.CSSProperties = {
-  marginBottom: '15px',
-};
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  color: '#00ff9f',
-  marginBottom: '5px',
-  fontSize: '20px',
-};
+/* -------------------- COMPONENT -------------------- */
 
 export const Home: React.FC = () => {
-  const [currentSection, setCurrentSection] = useState<Section>('home');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [searchFilter, setSearchFilter] = useState('');
-  const [purchasedProducts, setPurchasedProducts] = useState<string[]>([]);
-  const [alertData, setAlertData] = useState<{ title: string; message: string } | null>(null);
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [currentReviewProduct, setCurrentReviewProduct] = useState<Product | null>(null);
+  const [currentSection, setCurrentSection] = useState<Section>('home');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [alert, setAlert] = useState<{ title: string; message: string } | null>(null);
 
-  const { currentUser, register, login, logout, updateUser } = useAuth();
-  const { cart, addToCart, removeFromCart, clearCart, getCartTotal, getCartCount } = useCart();
-  const { addReview, getAverageRating, hasUserReviewed, getProductReviews } = useReviews();
+  const [highlighted, setHighlighted] = useState<string | null>(null);
 
-  const showAlert = (title: string, message: string) => {
-    setAlertData({ title, message });
-  };
+  const { currentUser, login, register, logout, updateUser } = useAuth();
+  const { cart, addToCart, removeFromCart, clearCart, getCartTotal, getCartCount } = useCart();
+  const { addReview, getAverageRating, getProductReviews, hasUserReviewed } = useReviews();
 
-  const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const result = register(
-      formData.get('name') as string,
-      formData.get('email') as string,
-      parseInt(formData.get('age') as string),
-      formData.get('referral') as string
-    );
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
 
-    if (result.success) {
-      showAlert('¡REGISTRO EXITOSO!', result.message);
-    } else {
-      showAlert('ERROR DE REGISTRO', result.message);
-    }
-  };
+  // 🛑 NUEVOS ESTADOS PARA CHECKOUT Y RESULTADO DE COMPRA
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
+  const [purchaseResult, setPurchaseResult] = useState<BoletaResult | null>(null);
+  const [isSuccess, setIsSuccess] = useState<boolean | null>(null);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const result = login(formData.get('email') as string);
+  const isAdmin = currentUser?.email === ADMIN_CREDENTIALS.email;
 
-    if (result.success) {
-      setPurchasedProducts(['LL001', 'JM002', 'AC001', 'AC002', 'CO001', 'CG001']);
-      showAlert('¡SESIÓN INICIADA!', result.message);
-    }
-  };
+  /* -------------------- LOAD PRODUCTS -------------------- */
 
-  const handleAddToCart = (productCode: string) => {
-    if (!currentUser) {
-      showAlert('SESIÓN REQUERIDA', 'Debes iniciar sesión para agregar productos al carrito.');
-      setCurrentSection('home');
-      return;
-    }
+  useEffect(() => {
+    const load = async () => {
+      const saved = localStorage.getItem('products');
+      if (saved) {
+        setProducts(JSON.parse(saved));
+      } else {
+        const p = productService.getAllProducts();
+        setProducts(p);
+        localStorage.setItem('products', JSON.stringify(p));
+      }
+    };
+    load();
+  }, []);
 
-    const product = productService.getProductByCode(productCode);
-    if (product) {
-      addToCart(product);
-      showAlert('¡PRODUCTO AGREGADO!', `${product.name}\n\nha sido agregado al carrito.`);
-    }
-  };
+  /* -------------------- AUTH -------------------- */
 
-  const handleCheckout = () => {
-    if (cart.length === 0) {
-      showAlert('CARRITO VACÍO', 'El carrito está vacío.');
-      return;
-    }
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const res = await login(
+      fd.get('email') as string,
+      fd.get('password') as string
+    );
 
-    const total = getCartTotal(currentUser);
-    //const newPurchases = cart.map(item => item.code).filter(code => !purchasedProducts.includes(code));
-    const newPurchases = cart
-      .map(item => item.product.code)
-      .filter(code => !purchasedProducts.includes(code));
+    setAlert({
+      title: res.success ? 'LOGIN OK' : 'ERROR',
+      message: res.message,
+    });
+  };
 
-    setPurchasedProducts([...purchasedProducts, ...newPurchases]);
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const res = await register(
+      fd.get('name') as string,
+      fd.get('email') as string,
+      fd.get('password') as string,
+      Number(fd.get('age'))
+    );
 
-    if (currentUser) {
-      const earnedPoints = Math.floor(total / 1000);
-      updateUser({
-        points: currentUser.points + earnedPoints,
-        level: Math.floor((currentUser.points + earnedPoints) / 500) + 1,
-      });
-    }
+    setAlert({
+      title: res.success ? 'REGISTRO OK' : 'ERROR',
+      message: res.message,
+    });
+  };
 
-    showAlert(
-      '¡COMPRA REALIZADA!',
-      `¡Compra realizada con éxito!\nTotal: $${total.toLocaleString('es-CL')}\nHas ganado ${Math.floor(total / 1000)} puntos LevelUp!\n\n¡Ahora puedes dejar reseñas de los productos comprados!`
-    );
-    clearCart();
-  };
+  /* -------------------- CART & CHECKOUT FLOW -------------------- */
 
-  const handleOpenReviewModal = (productCode: string) => {
-    const product = productService.getProductByCode(productCode);
-    if (product) {
-      setCurrentReviewProduct(product);
-      setReviewModalOpen(true);
-    }
-  };
+  const handleAdd = (product: Product) => {
+    if (!currentUser) {
+      setAlert({ title: 'ATENCIÓN', message: 'Debes iniciar sesión' });
+      return;
+    }
 
-  const handleSubmitReview = (rating: number, text: string) => {
-    if (!currentUser || !currentReviewProduct) return;
+    addToCart(product);
+    setHighlighted(product.code);
+    setTimeout(() => setHighlighted(null), 300);
+  };
 
-    const newReview = {
-      userName: currentUser.name,
-      userEmail: currentUser.email,
-      rating,
-      text,
-      date: new Date().toLocaleDateString('es-CL'),
-    };
+  // 🛑 FUNCIÓN PARA REDIRIGIR AL FORMULARIO DE CHECKOUT
+  const handleCheckoutRedirect = () => {
+    if (!currentUser || cart.length === 0) {
+      setAlert({ title: 'ATENCIÓN', message: 'Debes iniciar sesión y tener productos en el carrito.' });
+      return;
+    }
+    
+    // Pre-llenar datos con información del usuario
+    const initialData: CheckoutData = {
+      nombre: currentUser.nombre,
+      apellido: currentUser.apellido || 'N/A', // Usar el apellido si existe, sino 'N/A'
+      correo: currentUser.email,
+      calle: currentUser.calle || '', 
+      region: currentUser.region || 'Región Metropolitana de Santiago', 
+      comuna: currentUser.comuna || 'Cerrillos', 
+      departamento: currentUser.departamento || '',
+      indicaciones: '',
+    };
 
-    addReview(currentReviewProduct.code, newReview);
-    updateUser({ points: currentUser.points + 50 });
+    setCheckoutData(initialData); 
+    setCurrentSection('checkout'); // Navega a la vista de Checkout
+  };
 
-    showAlert(
-      '¡RESEÑA PUBLICADA!',
-      '¡Reseña publicada con éxito!\n\nHas ganado 50 puntos LevelUp.\n¡Gracias por compartir tu opinión!'
-    );
-    setReviewModalOpen(false);
-  };
 
-  const getPrice = (price: number) => {
-    return currentUser?.isDuoc ? price * 0.8 : price;
-  };
+  // 🛑 FUNCIÓN PARA ENVIAR LA COMPRA AL BACKEND
+  const submitPurchase = async (shippingData: CheckoutData) => {
+    if (!currentUser) return;
 
-  const filteredProducts = productService.filterProducts(categoryFilter, searchFilter);
+    // 1. Mapeo de CartItem a DTO
+    const purchaseItems = cart.map(item => ({
+      productId: item.product.id!, 
+      quantity: item.quantity,
+      price: item.product.price, // Precio base (el descuento se maneja en el total/descuento)
+    }));
 
-  return (
-    <div
-      style={{
-        background: 'repeating-conic-gradient(#0a0a0a 0% 25%, #0f1f1f 0% 50%) 0 0 / 30px 30px',
-        minHeight: '100vh',
-        color: '#00ff9f',
-        fontFamily: 'monospace',
-      }}
-    >
-      <Header
-        currentSection={currentSection}
-        onSectionChange={setCurrentSection}
-        cartCount={getCartCount()}
-      />
+    // 2. Cálculo de Totales
+    const totalWithDiscount = getCartTotal(currentUser);
+    const totalOriginal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const discountAmount = totalOriginal - totalWithDiscount;
+    
+    // 3. Creación del DTO final para Spring Boot
+    const purchaseDTO: CompraRequestDTO = {
+      ...shippingData,
+      userEmail: currentUser.email,
+      subtotal: totalOriginal, // Subtotal antes de descuento
+      descuento: discountAmount, // Cantidad de descuento aplicada
+      total: totalWithDiscount, // Total final a pagar
+      items: purchaseItems,
+    };
+    
+    try {
+        // 4. Envío de la compra a la API
+        const res = await axios.post(`${API_BASE_URL}/compras`, purchaseDTO);
+        
+        // 5. Procesar Respuesta Exitosa (asume que res.data es BoletaResult)
+        const result: BoletaResult = res.data; 
 
-      {/* Admin Access Button */}
-      <div style={{ textAlign: 'center', padding: '10px', backgroundColor: '#0a0a0a', borderBottom: '2px solid #00ff9f' }}>
-        <button
-          onClick={() => window.location.href = '/admin'}
-          style={{
-            backgroundColor: 'transparent',
-            color: '#00ff9f',
-            border: '2px solid #00ff9f',
-            padding: '8px 20px',
-            fontSize: '16px',
-            cursor: 'pointer',
-            fontFamily: 'monospace',
-            transition: 'all 0.3s',
-          }}
-        >
-          🔐 ACCESO ADMINISTRADOR
-        </button>
-      </div>
+        // Actualizar estado local del usuario (puntos, productos comprados)
+        const pointsEarned = Math.floor(result.total / 1000);
+        const newProductCodes = cart.map(item => item.product.code);
 
-      <div style={containerStyle}>
-        {/* HOME SECTION */}
-        {currentSection === 'home' && (
-          <div>
-            <div style={sectionStyle}>
-              <h2 style={titleStyle}>¡Bienvenido a Level-Up Gamer!</h2>
-              <p>Tu tienda online dedicada a satisfacer las necesidades de los entusiastas de los videojuegos en Chile.</p>
-              <p>¡Desafía tus límites con Level-Up Gamer! Conviértete en el héroe de tu propia historia.</p>
-            </div>
+        const updatedUser = {
+          ...currentUser,
+          puntos: (currentUser.puntos ?? 0) + pointsEarned,
+          purchasedProducts: [
+              ...(currentUser.purchasedProducts || []), 
+              ...newProductCodes
+          ],
+        };
+        
+        localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+        updateUser(updatedUser); // Sincroniza el estado
+        clearCart();
 
-            {!currentUser ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                {/* Register Form */}
-                <div style={{ backgroundColor: '#0f1f1f', border: '2px solid #00ff9f', padding: '25px' }}>
-                  <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>&gt; REGISTRO</h3>
-                  <form onSubmit={handleRegister}>
-                    <div style={formGroupStyle}>
-                      <label style={labelStyle}>NOMBRE:</label>
-                      <input name="name" required style={inputStyle} />
-                    </div>
-                    <div style={formGroupStyle}>
-                      <label style={labelStyle}>EMAIL:</label>
-                      <input name="email" type="email" required style={inputStyle} />
-                    </div>
-                    <div style={formGroupStyle}>
-                      <label style={labelStyle}>EDAD:</label>
-                      <input name="age" type="number" min="18" required style={inputStyle} />
-                    </div>
-                    <div style={formGroupStyle}>
-                      <label style={labelStyle}>CONTRASEÑA:</label>
-                      <input name="password" type="password" required style={inputStyle} />
-                    </div>
-                    <div style={formGroupStyle}>
-                      <label style={labelStyle}>CÓDIGO DE REFERIDO (Opcional):</label>
-                      <input name="referral" style={inputStyle} />
-                    </div>
-                    <button type="submit" style={buttonStyle}>REGISTRARSE</button>
-                  </form>
-                </div>
+        setPurchaseResult(result);
+        setIsSuccess(true);
+        setCurrentSection('result'); // Ir a la vista de éxito
 
-                {/* Login Form */}
-                <div style={{ backgroundColor: '#0f1f1f', border: '2px solid #00ff9f', padding: '25px' }}>
-                  <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>&gt; INICIAR SESIÓN</h3>
-                  <form onSubmit={handleLogin}>
-                    <div style={formGroupStyle}>
-                      <label style={labelStyle}>EMAIL:</label>
-                      <input name="email" type="email" required style={inputStyle} />
-                    </div>
-                    <div style={formGroupStyle}>
-                      <label style={labelStyle}>CONTRASEÑA:</label>
-                      <input name="password" type="password" required style={inputStyle} />
-                    </div>
-                    <button type="submit" style={buttonStyle}>ENTRAR</button>
-                  </form>
-                </div>
-              </div>
-            ) : (
-              <div style={sectionStyle}>
-                <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>&gt; SESIÓN ACTIVA</h3>
-                <p>USUARIO: {currentUser.name}</p>
-                <p>EMAIL: {currentUser.email}</p>
-                {currentUser.isDuoc && (
-                  <span
-                    style={{
-                      backgroundColor: '#00ff9f',
-                      color: '#0a0a0a',
-                      padding: '5px 15px',
-                      display: 'inline-block',
-                      marginTop: '10px',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    ¡DESCUENTO DUOC 20% ACTIVO!
-                  </span>
-                )}
-                <div style={{ fontSize: '24px', marginTop: '15px' }}>
-                  <p>PUNTOS LEVELUP: {currentUser.points}</p>
-                  <p>NIVEL: {currentUser.level}</p>
-                </div>
-                <button onClick={logout} style={buttonStyle}>CERRAR SESIÓN</button>
-              </div>
-            )}
-          </div>
-        )}
+    } catch (error: any) {
+        console.error('Error al procesar la compra:', error);
+        
+        // 6. Procesar Fallo
+        // Crear un resultado simple para mostrar el fallo
+        const failedResult: BoletaResult = {
+          id: 'FALLO',
+          fecha: new Date().toISOString(),
+          usuarioEmail: currentUser.email,
+          total: totalWithDiscount,
+          subtotal: totalOriginal,
+          descuento: discountAmount,
+          estado: 'FALLIDO',
+          nombreCompleto: `${shippingData.nombre} ${shippingData.apellido}`,
+          direccionEntrega: `${shippingData.calle}, ${shippingData.comuna}`,
+          detalles: purchaseItems.map(i => ({ 
+            productoNombre: cart.find(c => c.product.id === i.productId)?.product.name || 'Producto Desconocido',
+            cantidad: i.quantity,
+            precioUnitario: i.price
+          })),
+        };
 
-        {/* PRODUCTS SECTION */}
-        {currentSection === 'products' && (
-          <div>
-            <div style={sectionStyle}>
-              <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>&gt; FILTROS</h3>
-              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <div>
-                  <label style={{ marginRight: '10px' }}>CATEGORÍA:</label>
-                  <select
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    style={inputStyle}
-                  >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat === 'Todas' ? 'all' : cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ marginRight: '10px' }}>BUSCAR:</label>
-                  <input
-                    value={searchFilter}
-                    onChange={(e) => setSearchFilter(e.target.value)}
-                    placeholder="Nombre del producto..."
-                    style={inputStyle}
-                  />
-                </div>
-              </div>
-            </div>
+        setPurchaseResult(failedResult);
+        setIsSuccess(false);
+        setCurrentSection('result'); // Ir a la vista de fallo
+    }
+  };
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '25px',
-              }}
-            >
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.code}
-                  product={product}
-                  price={getPrice(product.price)}
-                  isDuocUser={currentUser?.isDuoc || false}
-                  ratingData={getAverageRating(product.code)}
-                  onAddToCart={handleAddToCart}
-                  onViewReviews={handleOpenReviewModal}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+  /* -------------------- FILTER -------------------- */
 
-        {/* CART SECTION */}
-        {currentSection === 'cart' && (
-          <div style={sectionStyle}>
-            <h3 style={{ fontSize: '28px', marginBottom: '20px' }}>&gt; CARRITO DE COMPRAS</h3>
+  const filteredProducts = products.filter(p => {
+    if (categoryFilter !== 'all' && p.category !== categoryFilter) return false;
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
-            {cart.length === 0 ? (
-              <p>El carrito está vacío.</p>
-            ) : (
-              <>
-                {cart.map((item, index) => {
-                  const price = getPrice(item.product.price);
-                  return (
-                    <div
-                      key={index}
-                      style={{
-                        borderBottom: '1px solid #00ff9f',
-                        padding: '15px 0',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <div>
-                        <strong>{item.product.name}</strong>
-                        <br />
-                        ${price.toLocaleString('es-CL')} x {item.quantity}
-                      </div>
+  /* -------------------- RENDER -------------------- */
 
-                      <button
-                        onClick={() => removeFromCart(index)}
-                        style={{
-                          backgroundColor: '#ff0000',
-                          color: '#fff',
-                          border: 'none',
-                          padding: '5px 10px',
-                          cursor: 'pointer',
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        X
-                      </button>
-                    </div>
-                  );
-                })}
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background:
+          'repeating-conic-gradient(#0a0a0a 0% 25%, #0f1f1f 0% 50%) 0 0 / 30px 30px',
+        color: '#00ff9f',
+        fontFamily: 'monospace',
+      }}
+    >
+      <Header
+        currentSection={currentSection}
+        onSectionChange={setCurrentSection}
+        cartCount={getCartCount()}
+      />
 
-                <div
-                  style={{
-                    fontSize: '32px',
-                    marginTop: '20px',
-                    paddingTop: '20px',
-                    borderTop: '2px solid #00ff9f',
-                    textShadow: '0 0 10px #00ff9f',
-                  }}
-                >
-                  TOTAL: ${getCartTotal(currentUser).toLocaleString('es-CL')}
-                </div>
+      {/* ADMIN */}
+      {isAdmin && (
+        <div style={{ textAlign: 'center', padding: '10px' }}>
+          <button
+            onClick={() => (window.location.href = '/admin')}
+            style={{ ...buttonStyle, width: 'auto' }}
+          >
+            🔐 ADMIN DASHBOARD
+          </button>
+        </div>
+      )}
 
-                <button onClick={handleCheckout} style={buttonStyle}>
-                  FINALIZAR COMPRA
-                </button>
-              </>
-            )}
-          </div>
-        )}
+      <div style={containerStyle}>
 
-        {/* PROFILE SECTION */}
-        {currentSection === 'profile' && (
-          <div style={sectionStyle}>
-            <h3 style={{ fontSize: '28px', marginBottom: '20px' }}>&gt; MI PERFIL</h3>
-            {currentUser ? (
-              <>
-                <p><strong>NOMBRE:</strong> {currentUser.name}</p>
-                <p><strong>EMAIL:</strong> {currentUser.email}</p>
-                <p><strong>PUNTOS LEVELUP:</strong> {currentUser.points}</p>
-                <p><strong>NIVEL:</strong> {currentUser.level}</p>
-                <p><strong>CÓDIGO DE REFERIDO:</strong> {currentUser.referralCode}</p>
-                <p><strong>PRODUCTOS COMPRADOS:</strong> {purchasedProducts.length}</p>
-                {currentUser.isDuoc && (
-                  <span
-                    style={{
-                      backgroundColor: '#00ff9f',
-                      color: '#0a0a0a',
-                      padding: '5px 15px',
-                      display: 'inline-block',
-                      marginTop: '10px',
-                    }}
-                  >
-                    DESCUENTO DUOC 20% ACTIVO
-                  </span>
-                )}
-              </>
-            ) : (
-              <p>Debes iniciar sesión para ver tu perfil.</p>
-            )}
-          </div>
-        )}
+        {/* HOME (Login/Registro) */}
+        {currentSection === 'home' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            {!currentUser ? (
+              <>
+                <div style={sectionStyle}>
+                  <h3 style={titleStyle}>LOGIN</h3>
+                  <form onSubmit={handleLogin}>
+                    <input name="email" placeholder="Email" style={inputStyle} />
+                    <input name="password" type="password" placeholder="Password" style={inputStyle} />
+                    <button style={buttonStyle}>Entrar</button>
+                  </form>
+                </div>
 
-        {/* COMMUNITY SECTION */}
-        {currentSection === 'community' && (
-          <div>
-            <div style={sectionStyle}>
-              <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>&gt; COMUNIDAD GAMER</h3>
-              <p>¡Únete a nuestra comunidad! Comparte tu código de referido y gana puntos LevelUp.</p>
-              <div style={{ fontSize: '24px', marginTop: '15px' }}>
-                <p>
-                  TU CÓDIGO DE REFERIDO:{' '}
-                  <span style={{ color: '#00ff9f', textShadow: '0 0 10px #00ff9f' }}>
-                    {currentUser ? currentUser.referralCode : 'Debes iniciar sesión'}
-                  </span>
-                </p>
-              </div>
-            </div>
+                <div style={sectionStyle}>
+                  <h3 style={titleStyle}>REGISTRO</h3>
+                  <form onSubmit={handleRegister}>
+                    <input name="name" placeholder="Nombre" style={inputStyle} />
+                    <input name="email" placeholder="Email" style={inputStyle} />
+                    <input name="password" type="password" placeholder="Password" style={inputStyle} />
+                    <input name="age" type="number" placeholder="Edad" style={inputStyle} />
+                    <button style={buttonStyle}>Registrarse</button>
+                  </form>
+                </div>
+              </>
+            ) : (
+              <div style={sectionStyle}>
+                <h3 style={titleStyle}>BIENVENIDO {currentUser.nombre}</h3>
+                <p>Puntos: {currentUser.puntos ?? 0}</p>
+                <button onClick={logout} style={buttonStyle}>Cerrar sesión</button>
+              </div>
+            )}
+          </div>
+        )}
 
-            <div style={sectionStyle}>
-              <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>&gt; EVENTOS GAMER</h3>
-              <p>Próximamente: Mapa interactivo con eventos de videojuegos a nivel nacional.</p>
-            </div>
+        {/* PRODUCTS */}
+        {currentSection === 'products' && (
+          <>
+            <div style={sectionStyle}>
+              <select onChange={e => setCategoryFilter(e.target.value)} style={inputStyle}>
+                <option value="all">Todas</option>
+                {CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <input
+                placeholder="Buscar..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={inputStyle}
+              />
+            </div>
 
-            <div style={sectionStyle}>
-              <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>&gt; BLOG Y NOTICIAS</h3>
-              <p>Mantente al día con las últimas novedades del mundo gamer.</p>
-            </div>
-          </div>
-        )}
-      </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 280px)', gap: '20px' }}>
+              {filteredProducts.map(p => (
+                <div
+                  key={p.code}
+                  style={{
+                    boxShadow: highlighted === p.code ? '0 0 25px #00ff9f' : 'none',
+                    transition: '0.3s',
+                  }}
+                >
+                  <ProductCard
+                    product={p}
+                    price={p.price}
+                    ratingData={getAverageRating(p.code)}
+                    isDuocUser={!!currentUser?.duoc}
+                    onAddToCart={() => handleAdd(p)}
+                    onViewReviews={() => {
+                      setReviewProduct(p);
+                      setReviewOpen(true);
+                    }}
+                  />
+                </div>
+              ))}
+              </div>
+          </>
+        )}
 
-      {/* Review Modal */}
-      <ReviewModal
-        isOpen={reviewModalOpen}
-        product={currentReviewProduct}
-        currentUser={currentUser}
-        purchasedProducts={purchasedProducts}
-        reviews={currentReviewProduct ? getProductReviews(currentReviewProduct.code) : []}
-        ratingData={currentReviewProduct ? getAverageRating(currentReviewProduct.code) : { average: '0', count: 0 }}
-        hasUserReviewed={
-          currentUser && currentReviewProduct
-            ? hasUserReviewed(currentReviewProduct.code, currentUser.email)
-            : false
-        }
-        onClose={() => setReviewModalOpen(false)}
-        onSubmitReview={handleSubmitReview}
-      />
+        {/* CART */}
+        {currentSection === 'cart' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+            <div style={sectionStyle}>
+              {cart.map((item, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>{item.product.name} ({item.quantity})</span>
+                  <button onClick={() => removeFromCart(i)}>❌</button>
+                </div>
+              ))}
+            </div>
 
-      {/* Custom Alert */}
-      <CustomAlert alertData={alertData} onClose={() => setAlertData(null)} />
+            <div style={sectionStyle}>
+              <h3>TOTAL</h3>
+              <p>${getCartTotal(currentUser!).toLocaleString('es-CL')}</p>
+              {/* 🛑 CAMBIADO: Redirige al formulario de dirección */}
+              <button style={buttonStyle} onClick={handleCheckoutRedirect}>FINALIZAR COMPRA</button>
+            </div>
+          </div>
+        )}
+        
+        {/* 🛑 NUEVA SECCIÓN: CHECKOUT (FORMULARIO DE DIRECCIÓN) */}
+        {currentSection === 'checkout' && currentUser && checkoutData && (
+          <CheckoutForm 
+            initialData={checkoutData}
+            cart={cart}
+            total={getCartTotal(currentUser)}
+            onSubmit={submitPurchase} // Envía los datos al backend
+          />
+        )}
+        
+        {/* 🛑 NUEVA SECCIÓN: RESULTADO (ÉXITO/FALLO) */}
+        {currentSection === 'result' && purchaseResult && (
+          <PurchaseResult 
+            purchase={purchaseResult} 
+            isSuccess={isSuccess!} 
+            onRetry={() => setCurrentSection('checkout')} 
+            onGoHome={() => setCurrentSection('home')} 
+          />
+        )}
 
-      {/* WhatsApp Button */}
-      <button
-        onClick={() =>
-          window.open(
-            'https://wa.me/56912345678?text=Hola,%20necesito%20soporte%20técnico',
-            '_blank'
-          )
-        }
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          backgroundColor: '#25D366',
-          color: 'white',
-          border: '2px solid #00ff9f',
-          padding: '15px 25px',
-          borderRadius: '50px',
-          cursor: 'pointer',
-          fontSize: '20px',
-          boxShadow: '0 0 20px rgba(37, 211, 102, 0.5)',
-          zIndex: 1000,
-          fontFamily: 'monospace',
-        }}
-      >
-        💬 SOPORTE TÉCNICO
-      </button>
 
-      <Footer />
-    </div>
-  );
+        {/* PROFILE */}
+        {currentSection === 'profile' && (
+        <div style={sectionStyle}>
+          {currentUser ? (
+            <>
+              <p><strong>NOMBRE:</strong> {currentUser.nombre}</p>
+              <p><strong>EMAIL:</strong> {currentUser.email}</p>
+              <p><strong>PUNTOS:</strong> {currentUser.puntos}</p>
+              <p><strong>NIVEL:</strong> {currentUser.nivel}</p>
+              <p><strong>CÓDIGO REFERIDO:</strong> {currentUser.codigoReferido}</p>
+
+              {currentUser.duoc && (
+                <span
+                  style={{
+                    backgroundColor: '#00ff9f',
+                    color: '#0a0a0a',
+                    padding: '5px 15px',
+                    display: 'inline-block',
+                    marginTop: '10px',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  DESCUENTO DUOC ACTIVO
+                </span>
+              )}
+            </>
+          ) : (
+            <p>Debes iniciar sesión para ver tu perfil.</p>
+          )}
+        </div>
+      )}
+
+        {/* COMMUNITY */}
+        {currentSection === 'community' && (
+          <div style={sectionStyle}>
+          <h3>&gt; COMUNIDAD GAMER</h3>
+          {currentUser ? (
+            <p>
+              TU CÓDIGO DE REFERIDO:{' '}
+              <span style={{ textShadow: '0 0 10px #00ff9f' }}>
+                {currentUser.codigoReferido}
+              </span>
+            </p>
+          ) : (
+            <p>Inicia sesión para ver tu código de referido.</p>
+          )}
+        </div>
+      )}
+
+      </div>
+
+      {reviewProduct && (
+        <ReviewModal
+          isOpen={reviewOpen}
+          product={reviewProduct}
+          currentUser={currentUser}
+          reviews={getProductReviews(reviewProduct.code)}
+          ratingData={getAverageRating(reviewProduct.code)}
+          hasUserReviewed={
+            !!currentUser && hasUserReviewed(reviewProduct.code, currentUser.email)
+          }
+          purchasedProducts={currentUser?.purchasedProducts ?? []} 
+          onClose={() => setReviewOpen(false)}
+          onSubmitReview={(r, t) =>
+            addReview(reviewProduct.code, {
+              rating: r,
+              text: t,
+              userName: currentUser!.nombre,
+              userEmail: currentUser!.email,
+              date: new Date().toLocaleDateString(),
+            })
+          }
+        />
+      )}
+
+      <CustomAlert alertData={alert} onClose={() => setAlert(null)} />
+      <Footer />
+    </div>
+  );
 };

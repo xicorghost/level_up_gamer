@@ -1,276 +1,629 @@
-# ✅ Correcciones Realizadas
+// src/components/admin/ProductManagement.tsx
 
-## 🔧 Errores TypeScript Corregidos
+/*import React, { useState } from 'react';
+import type { Product } from '../../types/index';
+import { PRODUCTS, CATEGORIES } from '../../services/products.service';
 
-### 1. **Imports de tipos con `verbatimModuleSyntax`**
+export const ProductManagement: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formData, setFormData] = useState<Product>({
+    code: '',
+    name: '',
+    category: 'Accesorios',
+    price: 0,
+    description: '',
+    image: '',
+    stock: 0,
+  });
 
-✅ **Antes:** `import { Product, UserData } from '../types'`  
-✅ **Después:** `import type { Product, UserData } from '../types'`
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-**Archivos corregidos:**
-- `src/hooks/useAuth.ts`
-- `src/hooks/useCart.ts`
-- `src/hooks/useReviews.ts`
-- `src/services/products.service.ts`
-- `src/components/Header.tsx`
-- `src/components/ProductCard.tsx`
-- `src/components/admin/ProductManagement.tsx`
-- `src/components/admin/UserManagement.tsx`
-- `src/components/admin/OrderManagement.tsx`
-- `src/pages/AdminDashboard.tsx`
+    if (editingProduct) {
+      // Actualizar producto existente
+      setProducts(
+        products.map((p) =>
+          p.code === editingProduct.code ? { ...p, ...formData } as Product : p
+        )
+      );
+      alert('Producto actualizado correctamente');
+    } else {
+      // Agregar nuevo producto
+      const newProduct: Product = {
+        code: formData.code!,
+        name: formData.name!,
+        category: formData.category!,
+        price: formData.price!,
+        description: formData.description!,
+        image: formData.image || 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Producto',
+        stock: formData.stock || 0,
+      };
+      setProducts([...products, newProduct]);
+      alert('Producto agregado correctamente');
+    }
 
----
-
-### 2. **Tipos faltantes exportados**
-
-✅ **Agregados a `src/types/index.ts`:**
-- `Section` - Ya estaba ✓
-- `RatingData` - Ya estaba ✓
-- `AlertData` - Ya estaba ✓
-- `Order` - Ya estaba ✓
-- `AdminSection` - Ya estaba ✓
-
-✅ **Nuevos tipos agregados:**
-```typescript
-export interface AdminCredentials {
-  email: string;
-  password: string;
-}
-
-export const ADMIN_CREDENTIALS: AdminCredentials = {
-  email: 'admin@levelupgamer.cl',
-  password: 'Admin2025!',
-};
-```
-
----
-
-### 3. **Problema con `stock` en ProductManagement**
-
-✅ **Antes:** 
-```typescript
-const [formData, setFormData] = useState<Partial<Product>>({ ... });
-```
-
-✅ **Después:**
-```typescript
-const [formData, setFormData] = useState<Product>({
-  code: '',
-  name: '',
-  category: 'Accesorios',
-  price: 0,
-  description: '',
-  image: '',
-  stock: 0, // ✓ Ahora todos los campos son obligatorios
-});
-```
-
----
-
-## 🔐 Sistema de Autenticación Admin
-
-### **Nuevo archivo creado:**
-
-#### `src/components/admin/AdminLogin.tsx`
-
-**Características:**
-- ✅ Login con validación de credenciales
-- ✅ Mensajes de error claros
-- ✅ Información de credenciales visible (solo para demo)
-- ✅ Botón para volver a la tienda
-- ✅ Diseño coherente con el tema del sitio
-
-**Credenciales:**
-```
-Email: admin@levelupgamer.cl
-Password: Admin2025!
-```
-
----
-
-### **AdminDashboard.tsx actualizado:**
-
-```typescript
-const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-// Mostrar login si no está autenticado
-if (!isAuthenticated) {
-  return <AdminLogin onLoginSuccess={() => setIsAuthenticated(true)} />;
-}
-```
-
-**Botón de cerrar sesión:**
-- ✅ Color rojo para distinguirlo
-- ✅ Cierra sesión y redirige a home
-- ✅ Limpia el estado de autenticación
-
----
-
-## 🚀 Navegación entre páginas
-
-### **App.tsx actualizado:**
-
-```typescript
-const path = window.location.pathname;
-const isAdminPath = path === '/admin' || path.startsWith('/admin');
-
-// Listener para cambios de ruta
-React.useEffect(() => {
-  const handlePopState = () => {
-    window.location.reload();
+    resetForm();
   };
-  
-  window.addEventListener('popstate', handlePopState);
-  return () => window.removeEventListener('popstate', handlePopState);
-}, []);
-```
 
----
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setFormData(product);
+    setShowAddForm(true);
+  };
 
-### **Home.tsx actualizado:**
+  const handleDelete = (code: string) => {
+    if (confirm('¿Estás seguro de eliminar este producto?')) {
+      setProducts(products.filter((p) => p.code !== code));
+      alert('Producto eliminado correctamente');
+    }
+  };
 
-✅ **Botón de acceso a admin agregado:**
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      name: '',
+      category: 'Accesorios',
+      price: 0,
+      description: '',
+      image: '',
+      stock: 0,
+    });
+    setEditingProduct(null);
+    setShowAddForm(false);
+  };
 
-```typescript
-<button
-  onClick={() => window.location.href = '/admin'}
-  style={{ ... }}
->
-  🔐 ACCESO ADMINISTRADOR
-</button>
-```
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px',
+    backgroundColor: '#0a0a0a',
+    border: '2px solid #00ff9f',
+    color: '#00ff9f',
+    fontFamily: 'monospace',
+    fontSize: '18px',
+  };
 
-**Ubicación:** Justo debajo del header, visible en todas las secciones.
+  const buttonStyle: React.CSSProperties = {
+    backgroundColor: '#1a4d4d',
+    color: '#00ff9f',
+    border: '2px solid #00ff9f',
+    padding: '12px 30px',
+    fontFamily: 'monospace',
+    fontSize: '22px',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    marginTop: '10px',
+  };
 
----
+  return (
+    <div>
+      <div
+        style={{
+          backgroundColor: '#0f1f1f',
+          border: '2px solid #00ff9f',
+          padding: '30px',
+          marginBottom: '30px',
+        }}
+      >
+        <h3 style={{ fontSize: '28px', marginBottom: '20px' }}>&gt; GESTIÓN DE PRODUCTOS</h3>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          style={buttonStyle}
+        >
+          {showAddForm ? 'CANCELAR' : '+ AGREGAR PRODUCTO'}
+        </button>
+      </div>
 
-### **vite.config.ts actualizado:**
+      {showAddForm && (
+        <div
+          style={{
+            backgroundColor: '#0f1f1f',
+            border: '2px solid #00ff9f',
+            padding: '25px',
+            marginBottom: '30px',
+          }}
+        >
+          <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>
+            &gt; {editingProduct ? 'EDITAR PRODUCTO' : 'NUEVO PRODUCTO'}
+          </h3>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>CÓDIGO:</label>
+              <input
+                type="text"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                required
+                disabled={!!editingProduct}
+                style={inputStyle}
+              />
+            </div>
 
-```typescript
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    historyApiFallback: true, // ✓ Para rutas SPA en desarrollo
-  },
-  preview: {
-    historyApiFallback: true, // ✓ Para preview build
-  },
-})
-```
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>NOMBRE:</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                style={inputStyle}
+              />
+            </div>
 
----
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>CATEGORÍA:</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                required
+                style={inputStyle}
+              >
+                {CATEGORIES.filter(c => c !== 'Todas').map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-## 📋 Resumen de Archivos Modificados
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>PRECIO:</label>
+              <input
+                type="number"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                required
+                style={inputStyle}
+              />
+            </div>
 
-### **Archivos corregidos (11):**
-1. ✅ `src/types/index.ts` - Agregado `AdminCredentials`
-2. ✅ `src/hooks/useAuth.ts` - Import corregido
-3. ✅ `src/hooks/useCart.ts` - Import corregido
-4. ✅ `src/hooks/useReviews.ts` - Import corregido
-5. ✅ `src/services/products.service.ts` - Import corregido
-6. ✅ `src/components/Header.tsx` - Import y estilos corregidos
-7. ✅ `src/components/ProductCard.tsx` - Import y estilos corregidos
-8. ✅ `src/components/admin/ProductManagement.tsx` - Tipo `Product` completo
-9. ✅ `src/components/admin/UserManagement.tsx` - Import corregido
-10. ✅ `src/components/admin/OrderManagement.tsx` - Import corregido
-11. ✅ `src/pages/AdminDashboard.tsx` - Import y autenticación agregada
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>STOCK:</label>
+              <input
+                type="number"
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                required
+                style={inputStyle}
+              />
+            </div>
 
-### **Archivos nuevos (1):**
-12. ✅ `src/components/admin/AdminLogin.tsx` - Componente de login
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>IMAGEN URL:</label>
+              <input
+                type="text"
+                value={formData.image}
+                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                style={inputStyle}
+                placeholder="https://..."
+              />
+            </div>
 
-### **Archivos actualizados (4):**
-13. ✅ `src/App.tsx` - Routing mejorado
-14. ✅ `src/pages/Home.tsx` - Botón admin agregado
-15. ✅ `vite.config.ts` - SPA routing configurado
-16. ✅ `README.md` - Credenciales documentadas
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>DESCRIPCIÓN:</label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                required
+                rows={4}
+                style={{
+                  ...inputStyle,
+                  resize: 'vertical',
+                }}
+              />
+            </div>
 
----
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ ...buttonStyle, flex: 1 }}>
+                {editingProduct ? 'ACTUALIZAR' : 'GUARDAR'} PRODUCTO
+              </button>
+              <button
+                type="button"
+                onClick={resetForm}
+                style={{
+                  ...buttonStyle,
+                  flex: 1,
+                  backgroundColor: '#ff0000',
+                }}
+              >
+                CANCELAR
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
-## 🎯 Cómo Probar
+      {/* Lista de productos }
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: '20px',
+        }}
+      >
+        {products.map((product) => (
+          <div
+            key={product.code}
+            style={{
+              backgroundColor: '#0f1f1f',
+              border: '2px solid #00ff9f',
+              padding: '20px',
+            }}
+          >
+            <div style={{ opacity: 0.7, marginBottom: '10px' }}>[{product.category}]</div>
+            <img
+              src={product.image}
+              alt={product.name}
+              style={{
+                width: '100%',
+                maxHeight: '150px',
+                objectFit: 'contain',
+                marginBottom: '15px',
+                border: '1px solid #00ff9f',
+                padding: '5px',
+              }}
+            />
+            <h4 style={{ fontSize: '22px', marginBottom: '10px' }}>{product.name}</h4>
+            <p style={{ fontSize: '16px', opacity: 0.8, marginBottom: '10px' }}>
+              {product.description}
+            </p>
+            <div style={{ fontSize: '24px', marginBottom: '10px' }}>
+              ${product.price.toLocaleString('es-CL')}
+            </div>
+            <div style={{ fontSize: '16px', marginBottom: '15px' }}>
+              Stock: {product.stock} unidades
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => handleEdit(product)}
+                style={{
+                  ...buttonStyle,
+                  flex: 1,
+                  fontSize: '16px',
+                  padding: '8px 15px',
+                }}
+              >
+                EDITAR
+              </button>
+              <button
+                onClick={() => handleDelete(product.code)}
+                style={{
+                  ...buttonStyle,
+                  flex: 1,
+                  fontSize: '16px',
+                  padding: '8px 15px',
+                  backgroundColor: '#ff0000',
+                }}
+              >
+                ELIMINAR
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};*/
+// src/components/admin/ProductManagement.tsx
 
-### **1. Acceder a la tienda:**
-```
-http://localhost:5173/
-```
+import React, { useState, useEffect } from 'react';
+import type { Product } from '../../types/index';
+import { PRODUCTS, CATEGORIES } from '../../services/products.service';
 
-### **2. Acceder al panel admin:**
 
-**Opción A:** Hacer clic en el botón "🔐 ACCESO ADMINISTRADOR"
+export const ProductManagement: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-**Opción B:** Navegar directamente a:
-```
-http://localhost:5173/admin
-```
+  const [formData, setFormData] = useState<Product>({
+    code: '',
+    name: '',
+    category: 'Accesorios',
+    price: 0,
+    description: '',
+    image: '',
+    stock: 0,
+  });
 
-### **3. Iniciar sesión como admin:**
-```
-Email: admin@levelupgamer.cl
-Password: Admin2025!
-```
+  // Cargar desde localStorage o desde PRODUCTS
+  useEffect(() => {
+    const saved = localStorage.getItem("products");
+    if (saved) {
+      setProducts(JSON.parse(saved));
+    } else {
+      setProducts(PRODUCTS);
+      localStorage.setItem("products", JSON.stringify(PRODUCTS));
+    }
+  }, []);
 
-### **4. Funcionalidades disponibles:**
-- ✅ Gestión de Productos (CRUD)
-- ✅ Gestión de Usuarios
-- ✅ Gestión de Pedidos
-- ✅ Estadísticas y gráficos
+  const saveToLocalStorage = (list: Product[]) => {
+    localStorage.setItem("products", JSON.stringify(list));
+  };
 
----
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
 
-## ⚠️ Notas Importantes
+    if (editingProduct) {
+      // Actualizar producto existente
+      const updatedList = products.map((p) =>
+        p.code === editingProduct.code ? { ...p, ...formData } : p
+      );
+      setProducts(updatedList);
+      saveToLocalStorage(updatedList);
+      alert('Producto actualizado correctamente');
 
-1. **Las credenciales están hardcodeadas** para propósitos de demostración. En producción deberían estar en variables de entorno.
+    } else {
+      // Agregar nuevo producto
+      const newProduct: Product = {
+        ...formData,
+        image: formData.image || 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Producto',
+      };
 
-2. **El routing es simple** usando `window.location`. Para producción se recomienda usar `react-router-dom`.
+      const newList = [...products, newProduct];
+      setProducts(newList);
+      saveToLocalStorage(newList);
+      alert('Producto agregado correctamente');
+    }
 
-3. **La autenticación es solo frontend** (no persiste). En producción necesitarías:
-   - Backend con JWT
-   - Session/Token storage
-   - Protected routes
+    resetForm();
+  };
 
-4. **Los datos son mock** (en memoria). Se pierden al recargar. Para producción necesitas:
-   - Base de datos (MongoDB, PostgreSQL)
-   - API REST o GraphQL
-   - Estado persistente
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setFormData(product);
+    setShowAddForm(true);
+  };
 
----
+  const handleDelete = (code: string) => {
+    if (confirm('¿Estás seguro de eliminar este producto?')) {
+      const updatedList = products.filter((p) => p.code !== code);
+      setProducts(updatedList);
+      saveToLocalStorage(updatedList);
+      alert('Producto eliminado correctamente');
+    }
+  };
 
-## ✨ Próximos Pasos Recomendados
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      name: '',
+      category: 'Accesorios',
+      price: 0,
+      description: '',
+      image: '',
+      stock: 0,
+    });
+    setEditingProduct(null);
+    setShowAddForm(false);
+  };
 
-1. **Instalar React Router:**
-```bash
-npm install react-router-dom
-```
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px',
+    backgroundColor: '#0a0a0a',
+    border: '2px solid #00ff9f',
+    color: '#00ff9f',
+    fontFamily: 'monospace',
+    fontSize: '18px',
+  };
 
-2. **Persistencia de sesión:**
-```bash
-npm install js-cookie
-# o usar localStorage con encriptación
-```
+  const buttonStyle: React.CSSProperties = {
+    backgroundColor: '#1a4d4d',
+    color: '#00ff9f',
+    border: '2px solid #00ff9f',
+    padding: '12px 30px',
+    fontFamily: 'monospace',
+    fontSize: '22px',
+    cursor: 'pointer',
+    transition: 'all 0.3s',
+    marginTop: '10px',
+  };
 
-3. **Backend API:**
-```bash
-# Crear backend con Express + MongoDB/PostgreSQL
-# Implementar JWT para autenticación
-```
+  return (
+    <div>
 
-4. **Variables de entorno:**
-```bash
-# Crear .env
-VITE_ADMIN_EMAIL=admin@levelupgamer.cl
-VITE_ADMIN_PASSWORD=Admin2025!
-```
+      <div style={{
+        backgroundColor: '#0f1f1f',
+        border: '2px solid #00ff9f',
+        padding: '30px',
+        marginBottom: '30px'
+      }}>
+        <h3 style={{ fontSize: '28px', marginBottom: '20px' }}>&gt; GESTIÓN DE PRODUCTOS</h3>
+        <button onClick={() => setShowAddForm(!showAddForm)} style={buttonStyle}>
+          {showAddForm ? 'CANCELAR' : '+ AGREGAR PRODUCTO'}
+        </button>
+      </div>
 
----
+      {showAddForm && (
+        <div style={{
+          backgroundColor: '#0f1f1f',
+          border: '2px solid #00ff9f',
+          padding: '25px',
+          marginBottom: '30px',
+        }}>
+          <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>
+            &gt; {editingProduct ? 'EDITAR PRODUCTO' : 'NUEVO PRODUCTO'}
+          </h3>
 
-## 🎉 ¡Todo Listo!
+          <form onSubmit={handleSubmit}>
+            {/* Código */}
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>CÓDIGO:</label>
+              <input
+                type="text"
+                required
+                disabled={!!editingProduct}
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
 
-Todos los errores de TypeScript están corregidos y el sistema de autenticación admin está funcionando. El proyecto ahora está completamente funcional con:
+            {/* Nombre */}
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>NOMBRE:</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
 
-✅ 0 Errores de TypeScript  
-✅ Sistema de login admin  
-✅ Navegación entre páginas  
-✅ CRUD completo de productos  
-✅ Gestión de usuarios y pedidos  
-✅ Estadísticas detalladas  
+            {/* Categoría */}
+            <div style={{ marginBottom: '15px' }}>
+              <label>CATEGORÍA:</label>
+              <select
+                required
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                style={inputStyle}
+              >
+                {CATEGORIES.filter(c => c !== "Todas").map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
 
-**¡Feliz desarrollo! 🚀**
+            {/* Precio */}
+            <div style={{ marginBottom: '15px' }}>
+              <label>PRECIO:</label>
+              <input
+                type="number"
+                required
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Stock */}
+            <div style={{ marginBottom: '15px' }}>
+              <label>STOCK:</label>
+              <input
+                type="number"
+                required
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Imagen */}
+            <div style={{ marginBottom: '15px' }}>
+              <label>IMAGEN URL:</label>
+              <input
+                type="text"
+                placeholder="https://..."
+                value={formData.image}
+                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                style={inputStyle}
+              />
+            </div>
+
+            {/* Descripción */}
+            <div style={{ marginBottom: '15px' }}>
+              <label>DESCRIPCIÓN:</label>
+              <textarea
+                required
+                rows={4}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                style={{ ...inputStyle, resize: 'vertical' }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit" style={{ ...buttonStyle, flex: 1 }}>
+                {editingProduct ? "ACTUALIZAR" : "GUARDAR"} PRODUCTO
+              </button>
+
+              <button
+                type="button"
+                onClick={resetForm}
+                style={{ ...buttonStyle, flex: 1, backgroundColor: "#ff0000" }}
+              >
+                CANCELAR
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* LISTADO */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          gap: '20px',
+        }}
+      >
+        {products.map(product => (
+          <div key={product.code} style={{
+            backgroundColor: '#0f1f1f',
+            border: '2px solid #00ff9f',
+            padding: '20px'
+          }}>
+            <div style={{ opacity: 0.7, marginBottom: '10px' }}>
+              [{product.category}]
+            </div>
+
+            <img
+              src={product.image}
+              alt={product.name}
+              style={{
+                width: '100%',
+                maxHeight: '150px',
+                objectFit: 'contain',
+                marginBottom: '15px',
+                border: '1px solid #00ff9f',
+                padding: '5px',
+              }}
+            />
+
+            <h4 style={{ fontSize: '22px', marginBottom: '10px' }}>
+              {product.name}
+            </h4>
+
+            <p style={{ fontSize: '16px', opacity: 0.8, marginBottom: '10px' }}>
+              {product.description}
+            </p>
+
+            <div style={{ fontSize: '24px', marginBottom: '10px' }}>
+              ${product.price.toLocaleString("es-CL")}
+            </div>
+
+            <div style={{ fontSize: '16px', marginBottom: '15px' }}>
+              Stock: {product.stock} unidades
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => handleEdit(product)}
+                style={{ ...buttonStyle, flex: 1 }}
+              >
+                EDITAR
+              </button>
+
+              <button
+                onClick={() => handleDelete(product.code)}
+                style={{
+                  ...buttonStyle,
+                  flex: 1,
+                  backgroundColor: '#ff0000'
+                }}
+              >
+                ELIMINAR
+              </button>
+            </div>
+
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
+};

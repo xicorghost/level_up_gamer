@@ -1,6 +1,6 @@
 // src/hooks/useAuth.ts
 
-import { useState } from 'react';
+/*import { useState } from 'react';
 import type { UserData } from '../types';
 
 export const useAuth = () => {
@@ -71,6 +71,70 @@ export const useAuth = () => {
     currentUser,
     register,
     login,
+    logout,
+    updateUser,
+  };
+};*/
+// src/hooks/admin/useAuth.ts
+
+import { useState } from 'react';
+import axios from 'axios';
+import type { UserData } from '../types';
+
+const API = 'http://localhost:8080/api/usuarios';
+
+export const useAuth = () => {
+  const [currentUser, setCurrentUser] = useState<UserData | null>(() => {
+    const saved = localStorage.getItem('currentUser');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const updateUser = (newUserData: UserData) => {
+    setCurrentUser(newUserData);
+    // Nota: El componente Home ya maneja el guardado en localStorage,
+    // pero si quieres centralizarlo aquí también puedes hacerlo:
+    // localStorage.setItem('currentUser', JSON.stringify(newUserData));
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      const res = await axios.post<UserData>(`${API}/login`, { email, password });
+      setCurrentUser(res.data);
+      localStorage.setItem('currentUser', JSON.stringify(res.data));
+      return { success: true, message: 'Sesión iniciada correctamente' };
+    } catch {
+      return { success: false, message: 'Credenciales incorrectas' };
+    }
+  };
+
+  const register = async (
+    nombre: string,
+    email: string,
+    password: string,
+    edad: number
+  ) => {
+    try {
+      await axios.post(`${API}/register`, {
+        nombre,
+        email,
+        password,
+        edad,
+      });
+      return { success: true, message: 'Registro exitoso' };
+    } catch {
+      return { success: false, message: 'Error en el registro' };
+    }
+  };
+
+  const logout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('currentUser');
+  };
+
+  return {
+    currentUser,
+    login,
+    register,
     logout,
     updateUser,
   };

@@ -1,307 +1,165 @@
-// src/components/admin/ProductManagement.tsx
+import React, { useEffect, useState } from "react";
+import {
+  getProducts,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} from "../../services/productApi";
+import type { Product } from "../../types";
+import styles from "../../styles/ProductManagement.module.css";
 
-import React, { useState } from 'react';
-import type { Product } from '../../types';
-import { PRODUCTS, CATEGORIES } from '../../services/products.service';
-
-export const ProductManagement: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
-  const [showAddForm, setShowAddForm] = useState(false);
+export default function ProductManagement() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Product>({
-    code: '',
-    name: '',
-    category: 'Accesorios',
+    code: "",
+    category: "",
+    name: "",
     price: 0,
-    description: '',
-    image: '',
+    description: "",
+    image: "",
     stock: 0,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ============================
+  // Cargar productos al iniciar
+  // ============================
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts();
+      setProducts(data);
+    } catch (error) {
+      console.error("Error cargando productos:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  // ============================
+  // Manejo de inputs
+  // ============================
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "price" || name === "stock" ? Number(value) : value,
+    }));
+  };
+
+  // ============================
+  // Guardar producto (crear / editar)
+  // ============================
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (editingProduct) {
-      // Actualizar producto existente
-      setProducts(
-        products.map((p) =>
-          p.code === editingProduct.code ? { ...p, ...formData } as Product : p
-        )
-      );
-      alert('Producto actualizado correctamente');
-    } else {
-      // Agregar nuevo producto
-      const newProduct: Product = {
-        code: formData.code!,
-        name: formData.name!,
-        category: formData.category!,
-        price: formData.price!,
-        description: formData.description!,
-        image: formData.image || 'https://via.placeholder.com/180x150/1a4d4d/00ff9f?text=Producto',
-        stock: formData.stock || 0,
-      };
-      setProducts([...products, newProduct]);
-      alert('Producto agregado correctamente');
-    }
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id!, formData);
+      } else {
+        await createProduct(formData);
+      }
 
-    resetForm();
+      setFormData({
+        code: "",
+        category: "",
+        name: "",
+        price: 0,
+        description: "",
+        image: "",
+        stock: 0,
+      });
+
+      setEditingProduct(null);
+      loadProducts();
+
+    } catch (error) {
+      console.error("Error guardando producto:", error);
+    }
   };
 
-  const handleEdit = (product: Product) => {
+  // ============================
+  // Editar producto
+  // ============================
+  const startEditing = (product: Product) => {
     setEditingProduct(product);
     setFormData(product);
-    setShowAddForm(true);
   };
 
-  const handleDelete = (code: string) => {
-    if (confirm('¿Estás seguro de eliminar este producto?')) {
-      setProducts(products.filter((p) => p.code !== code));
-      alert('Producto eliminado correctamente');
+  // ============================
+  // Eliminar producto
+  // ============================
+  const handleDelete = async (id: number) => {
+    if (!confirm("¿Estás seguro de eliminar este producto?")) return;
+
+    try {
+      await deleteProduct(id);
+      loadProducts();
+    } catch (error) {
+      console.error("Error eliminando producto:", error);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      code: '',
-      name: '',
-      category: 'Accesorios',
-      price: 0,
-      description: '',
-      image: '',
-      stock: 0,
-    });
-    setEditingProduct(null);
-    setShowAddForm(false);
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px',
-    backgroundColor: '#0a0a0a',
-    border: '2px solid #00ff9f',
-    color: '#00ff9f',
-    fontFamily: 'monospace',
-    fontSize: '18px',
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    backgroundColor: '#1a4d4d',
-    color: '#00ff9f',
-    border: '2px solid #00ff9f',
-    padding: '12px 30px',
-    fontFamily: 'monospace',
-    fontSize: '22px',
-    cursor: 'pointer',
-    transition: 'all 0.3s',
-    marginTop: '10px',
-  };
+  if (loading) return <p>Cargando productos...</p>;
 
   return (
-    <div>
-      <div
-        style={{
-          backgroundColor: '#0f1f1f',
-          border: '2px solid #00ff9f',
-          padding: '30px',
-          marginBottom: '30px',
-        }}
-      >
-        <h3 style={{ fontSize: '28px', marginBottom: '20px' }}>&gt; GESTIÓN DE PRODUCTOS</h3>
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          style={buttonStyle}
-        >
-          {showAddForm ? 'CANCELAR' : '+ AGREGAR PRODUCTO'}
+    <div className={styles.container}>
+      <h2 className={styles.title}>Gestión de Productos</h2>
+
+      {/* FORMULARIO */}
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <h3>{editingProduct ? "Editar Producto" : "Nuevo Producto"}</h3>
+
+        <input name="code" placeholder="Código" value={formData.code} onChange={handleChange} required />
+        <input name="category" placeholder="Categoría" value={formData.category} onChange={handleChange} required />
+        <input name="name" placeholder="Nombre" value={formData.name} onChange={handleChange} required />
+        <input type="number" name="price" placeholder="Precio" value={formData.price} onChange={handleChange} required />
+        <input name="description" placeholder="Descripción" value={formData.description} onChange={handleChange} required />
+        <input name="image" placeholder="URL Imagen" value={formData.image} onChange={handleChange} required />
+        <input type="number" name="stock" placeholder="Stock" value={formData.stock} onChange={handleChange} required />
+
+        <button type="submit" className={styles.btnSave}>
+          {editingProduct ? "Actualizar" : "Crear"}
         </button>
-      </div>
+      </form>
 
-      {showAddForm && (
-        <div
-          style={{
-            backgroundColor: '#0f1f1f',
-            border: '2px solid #00ff9f',
-            padding: '25px',
-            marginBottom: '30px',
-          }}
-        >
-          <h3 style={{ fontSize: '28px', marginBottom: '15px' }}>
-            &gt; {editingProduct ? 'EDITAR PRODUCTO' : 'NUEVO PRODUCTO'}
-          </h3>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>CÓDIGO:</label>
-              <input
-                type="text"
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                required
-                disabled={!!editingProduct}
-                style={inputStyle}
-              />
-            </div>
+      {/* TABLA */}
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
 
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>NOMBRE:</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>CATEGORÍA:</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                required
-                style={inputStyle}
-              >
-                {CATEGORIES.filter(c => c !== 'Todas').map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>PRECIO:</label>
-              <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                required
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>STOCK:</label>
-              <input
-                type="number"
-                value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
-                required
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>IMAGEN URL:</label>
-              <input
-                type="text"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                style={inputStyle}
-                placeholder="https://..."
-              />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', marginBottom: '5px' }}>DESCRIPCIÓN:</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                required
-                rows={4}
-                style={{
-                  ...inputStyle,
-                  resize: 'vertical',
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="submit" style={{ ...buttonStyle, flex: 1 }}>
-                {editingProduct ? 'ACTUALIZAR' : 'GUARDAR'} PRODUCTO
-              </button>
-              <button
-                type="button"
-                onClick={resetForm}
-                style={{
-                  ...buttonStyle,
-                  flex: 1,
-                  backgroundColor: '#ff0000',
-                }}
-              >
-                CANCELAR
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Lista de productos */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-          gap: '20px',
-        }}
-      >
-        {products.map((product) => (
-          <div
-            key={product.code}
-            style={{
-              backgroundColor: '#0f1f1f',
-              border: '2px solid #00ff9f',
-              padding: '20px',
-            }}
-          >
-            <div style={{ opacity: 0.7, marginBottom: '10px' }}>[{product.category}]</div>
-            <img
-              src={product.image}
-              alt={product.name}
-              style={{
-                width: '100%',
-                maxHeight: '150px',
-                objectFit: 'contain',
-                marginBottom: '15px',
-                border: '1px solid #00ff9f',
-                padding: '5px',
-              }}
-            />
-            <h4 style={{ fontSize: '22px', marginBottom: '10px' }}>{product.name}</h4>
-            <p style={{ fontSize: '16px', opacity: 0.8, marginBottom: '10px' }}>
-              {product.description}
-            </p>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>
-              ${product.price.toLocaleString('es-CL')}
-            </div>
-            <div style={{ fontSize: '16px', marginBottom: '15px' }}>
-              Stock: {product.stock} unidades
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => handleEdit(product)}
-                style={{
-                  ...buttonStyle,
-                  flex: 1,
-                  fontSize: '16px',
-                  padding: '8px 15px',
-                }}
-              >
-                EDITAR
-              </button>
-              <button
-                onClick={() => handleDelete(product.code)}
-                style={{
-                  ...buttonStyle,
-                  flex: 1,
-                  fontSize: '16px',
-                  padding: '8px 15px',
-                  backgroundColor: '#ff0000',
-                }}
-              >
-                ELIMINAR
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+        <tbody>
+          {products.map((p) => (
+            <tr key={p.id}>
+              <td>{p.id}</td>
+              <td>{p.code}</td>
+              <td>{p.name}</td>
+              <td>{p.category}</td>
+              <td>${p.price}</td>
+              <td>{p.stock}</td>
+              <td><img src={p.image} className={styles.img} /></td>
+              <td>
+                <button className={styles.btnEdit} onClick={() => startEditing(p)}>Editar</button>
+                <button className={styles.btnDelete} onClick={() => handleDelete(p.id!)}>Eliminar</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
-};
+}

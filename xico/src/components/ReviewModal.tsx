@@ -1,7 +1,7 @@
 // src/components/ReviewModal.tsx
 
 import React, { useState } from 'react';
-import type { Product, Review, RatingData, UserData } from '../types';
+import type { Product, Review, RatingData, UserData } from '../types/index';
 
 interface ReviewModalProps {
   isOpen: boolean;

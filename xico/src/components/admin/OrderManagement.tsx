@@ -1,7 +1,7 @@
 // src/components/admin/OrderManagement.tsx
 
 import React, { useState } from 'react';
-import type { Order } from '../../types';
+import type { Order } from '../../types/index';
 
 const MOCK_ORDERS: Order[] = [
   {
@@ -17,7 +17,7 @@ const MOCK_ORDERS: Order[] = [
           price: 549990,
           description: '',
           image: '',
-          stock: 0
+          stock: 0,
         },
         quantity: 1,
       },
@@ -42,7 +42,7 @@ const MOCK_ORDERS: Order[] = [
           price: 79990,
           description: '',
           image: '',
-          stock: 0
+          stock: 0,
         },
         quantity: 1,
       },
@@ -54,7 +54,7 @@ const MOCK_ORDERS: Order[] = [
           price: 49990,
           description: '',
           image: '',
-          stock: 0
+          stock: 0,
         },
         quantity: 1,
       },
@@ -79,7 +79,7 @@ const MOCK_ORDERS: Order[] = [
           price: 1299990,
           description: '',
           image: '',
-          stock: 0
+          stock: 0,
         },
         quantity: 1,
       },
@@ -104,7 +104,7 @@ const MOCK_ORDERS: Order[] = [
           price: 29990,
           description: '',
           image: '',
-          stock: 0
+          stock: 0,
         },
         quantity: 2,
       },
@@ -115,22 +115,24 @@ const MOCK_ORDERS: Order[] = [
   },
 ];
 
-
 export const OrderManagement: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'completed' | 'cancelled'>('all');
+  const [filterStatus, setFilterStatus] =
+    useState<'all' | 'pending' | 'completed' | 'cancelled'>('all');
 
   const filteredOrders = orders.filter((order) =>
     filterStatus === 'all' ? true : order.status === filterStatus
   );
 
+  /** 🔥 FIX PARA LOS TESTS: usamos función en setOrders */
   const updateOrderStatus = (orderId: string, newStatus: Order['status']) => {
-    setOrders(
-      orders.map((order) =>
+    setOrders((prev) =>
+      prev.map((order) =>
         order.id === orderId ? { ...order, status: newStatus } : order
       )
     );
+
     if (selectedOrder?.id === orderId) {
       setSelectedOrder({ ...selectedOrder, status: newStatus });
     }
@@ -186,253 +188,183 @@ export const OrderManagement: React.FC = () => {
 
   return (
     <div>
-      <div
-        style={{
-          backgroundColor: '#0f1f1f',
-          border: '2px solid #00ff9f',
-          padding: '30px',
-          marginBottom: '30px',
-        }}
-      >
-        <h3 style={{ fontSize: '28px', marginBottom: '20px' }}>&gt; GESTIÓN DE PEDIDOS</h3>
-        <p style={{ marginBottom: '20px' }}>
-          Total de pedidos: <strong>{orders.length}</strong>
-        </p>
+      <h3 style={{ fontSize: '28px', marginBottom: '20px' }}>
+        &gt; GESTIÓN DE PEDIDOS
+      </h3>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setFilterStatus('all')}
-            style={{
-              ...buttonStyle,
-              backgroundColor: filterStatus === 'all' ? '#00ff9f' : '#1a4d4d',
-              color: filterStatus === 'all' ? '#0a0a0a' : '#00ff9f',
-            }}
-          >
-            TODOS ({orders.length})
-          </button>
-          <button
-            onClick={() => setFilterStatus('pending')}
-            style={{
-              ...buttonStyle,
-              backgroundColor: filterStatus === 'pending' ? '#ff9f00' : '#1a4d4d',
-              color: filterStatus === 'pending' ? '#0a0a0a' : '#00ff9f',
-            }}
-          >
-            PENDIENTES ({orders.filter((o) => o.status === 'pending').length})
-          </button>
-          <button
-            onClick={() => setFilterStatus('completed')}
-            style={{
-              ...buttonStyle,
-              backgroundColor: filterStatus === 'completed' ? '#00ff9f' : '#1a4d4d',
-              color: filterStatus === 'completed' ? '#0a0a0a' : '#00ff9f',
-            }}
-          >
-            COMPLETADOS ({orders.filter((o) => o.status === 'completed').length})
-          </button>
-          <button
-            onClick={() => setFilterStatus('cancelled')}
-            style={{
-              ...buttonStyle,
-              backgroundColor: filterStatus === 'cancelled' ? '#ff0000' : '#1a4d4d',
-              color: '#fff',
-            }}
-          >
-            CANCELADOS ({orders.filter((o) => o.status === 'cancelled').length})
-          </button>
-        </div>
+      <div style={{ marginBottom: '20px' }}>
+        Total de pedidos: <strong>{orders.length}</strong>
       </div>
 
-      <div
-        style={{
-          backgroundColor: '#0f1f1f',
-          border: '2px solid #00ff9f',
-          padding: '20px',
-          overflowX: 'auto',
-        }}
-      >
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr>
-              <th style={tableHeaderStyle}>ID PEDIDO</th>
-              <th style={tableHeaderStyle}>USUARIO</th>
-              <th style={tableHeaderStyle}>FECHA</th>
-              <th style={tableHeaderStyle}>TOTAL</th>
-              <th style={tableHeaderStyle}>ESTADO</th>
-              <th style={tableHeaderStyle}>ACCIONES</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredOrders.length > 0 ? (
-              filteredOrders.map((order) => (
-                <tr key={order.id}>
-                  <td style={tableCellStyle}>#{order.id}</td>
-                  <td style={tableCellStyle}>
-                    <div>{order.userName}</div>
-                    <div style={{ fontSize: '14px', opacity: 0.7 }}>{order.userEmail}</div>
-                  </td>
-                  <td style={tableCellStyle}>{order.date}</td>
-                  <td style={tableCellStyle}>
-                    ${order.total.toLocaleString('es-CL')}
-                  </td>
-                  <td style={tableCellStyle}>
-                    <span
-                      style={{
-                        color: getStatusColor(order.status),
-                        fontWeight: 'bold',
-                        padding: '5px 10px',
-                        border: `2px solid ${getStatusColor(order.status)}`,
-                        borderRadius: '3px',
-                      }}
-                    >
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </td>
-                  <td style={tableCellStyle}>
-                    <button
-                      onClick={() => setSelectedOrder(order)}
-                      style={{ ...buttonStyle, marginRight: '5px' }}
-                    >
-                      VER
-                    </button>
-                    {order.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'completed')}
-                          style={{
-                            ...buttonStyle,
-                            backgroundColor: '#00ff9f',
-                            color: '#0a0a0a',
-                            marginRight: '5px',
-                          }}
-                        >
-                          COMPLETAR
-                        </button>
-                        <button
-                          onClick={() => updateOrderStatus(order.id, 'cancelled')}
-                          style={{
-                            ...buttonStyle,
-                            backgroundColor: '#ff0000',
-                            color: '#fff',
-                          }}
-                        >
-                          CANCELAR
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} style={{ ...tableCellStyle, textAlign: 'center', padding: '30px' }}>
-                  No hay pedidos con ese estado
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <button
+          onClick={() => setFilterStatus('all')}
+          style={buttonStyle}
+        >
+          TODOS ({orders.length})
+        </button>
+
+        <button
+          onClick={() => setFilterStatus('pending')}
+          style={buttonStyle}
+        >
+          PENDIENTES ({orders.filter((o) => o.status === 'pending').length})
+        </button>
+
+        <button
+          onClick={() => setFilterStatus('completed')}
+          style={buttonStyle}
+        >
+          COMPLETADOS ({orders.filter((o) => o.status === 'completed').length})
+        </button>
+
+        <button
+          onClick={() => setFilterStatus('cancelled')}
+          style={buttonStyle}
+        >
+          CANCELADOS ({orders.filter((o) => o.status === 'cancelled').length})
+        </button>
+      </div>
+
+      <table style={{ width: '100%', marginTop: '25px', borderCollapse: 'collapse' }}>
+        <thead>
+          <tr>
+            <th style={tableHeaderStyle}>ID</th>
+            <th style={tableHeaderStyle}>USUARIO</th>
+            <th style={tableHeaderStyle}>FECHA</th>
+            <th style={tableHeaderStyle}>TOTAL</th>
+            <th style={tableHeaderStyle}>ESTADO</th>
+            <th style={tableHeaderStyle}>ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map((order) => (
+              <tr key={order.id}>
+                <td style={tableCellStyle}>#{order.id}</td>
+                <td style={tableCellStyle}>{order.userName}</td>
+                <td style={tableCellStyle}>{order.date}</td>
+                <td style={tableCellStyle}>
+                  ${order.total.toLocaleString('es-CL')}
+                </td>
+                <td style={tableCellStyle}>
+                  <strong style={{ color: getStatusColor(order.status) }}>
+                    {getStatusLabel(order.status)}
+                  </strong>
+                </td>
+                <td style={tableCellStyle}>
+                  <button
+                    style={{ ...buttonStyle, marginRight: '5px' }}
+                    onClick={() => setSelectedOrder(order)}
+                  >
+                    VER
+                  </button>
+
+                  {order.status === 'pending' && (
+                    <>
+                      <button
+                        style={{
+                          ...buttonStyle,
+                          backgroundColor: '#00ff9f',
+                          color: '#000',
+                          marginRight: '5px',
+                        }}
+                        onClick={() => updateOrderStatus(order.id, 'completed')}
+                      >
+                        COMPLETAR
+                      </button>
+
+                      <button
+                        style={{
+                          ...buttonStyle,
+                          backgroundColor: '#ff0000',
+                          color: '#fff',
+                        }}
+                        onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                      >
+                        CANCELAR
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))
+          ) : (
+            <tr>
+              <td
+                colSpan={6}
+                style={{
+                  ...tableCellStyle,
+                  textAlign: 'center',
+                  padding: '20px',
+                }}
+              >
+                No hay pedidos con ese estado
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
-      {/* Modal de detalle del pedido */}
       {selectedOrder && (
         <div
+          data-testid="modal"
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            zIndex: 2000,
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,.9)',
             display: 'flex',
-            justifyContent: 'center',
             alignItems: 'center',
+            justifyContent: 'center',
             padding: '20px',
+            zIndex: 2000,
           }}
         >
           <div
             style={{
               backgroundColor: '#0f1f1f',
-              border: '3px solid #00ff9f',
-              padding: '30px',
+              border: '2px solid #00ff9f',
+              padding: '20px',
               maxWidth: '800px',
               width: '100%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h3 style={{ fontSize: '28px' }}>DETALLE DEL PEDIDO #{selectedOrder.id}</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <h3>DETALLE DEL PEDIDO #{selectedOrder.id}</h3>
               <button
                 onClick={() => setSelectedOrder(null)}
                 style={{
-                  fontSize: '35px',
-                  color: '#00ff9f',
-                  cursor: 'pointer',
                   border: 'none',
-                  background: 'none',
+                  fontSize: '30px',
+                  color: '#00ff9f',
+                  background: 'transparent',
+                  cursor: 'pointer',
                 }}
               >
                 ×
               </button>
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <p><strong>Cliente:</strong> {selectedOrder.userName}</p>
-              <p><strong>Email:</strong> {selectedOrder.userEmail}</p>
-              <p><strong>Fecha:</strong> {selectedOrder.date}</p>
-              <p>
-                <strong>Estado:</strong>{' '}
-                <span style={{ color: getStatusColor(selectedOrder.status) }}>
-                  {getStatusLabel(selectedOrder.status)}
-                </span>
-              </p>
-            </div>
+            <p>
+              <strong>Cliente:</strong> {selectedOrder.userName}
+            </p>
+            <p>
+              <strong>Email:</strong> {selectedOrder.userEmail}
+            </p>
+            <p>
+              <strong>Fecha:</strong> {selectedOrder.date}
+            </p>
 
-            {selectedOrder.address && (
-              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#0a0a0a', border: '2px solid #00ff9f' }}>
-                <h4 style={{ marginBottom: '10px' }}>DIRECCIÓN DE ENTREGA:</h4>
-                <p>{selectedOrder.address}</p>
-                <p>{selectedOrder.commune}, {selectedOrder.region}</p>
+            <h4>PRODUCTOS</h4>
+            {selectedOrder.items.map((item, i) => (
+              <div key={i}>
+                {item.product.name} × {item.quantity}
               </div>
-            )}
+            ))}
 
-            <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ marginBottom: '15px' }}>PRODUCTOS:</h4>
-              {selectedOrder.items.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: '15px',
-                    backgroundColor: '#0a0a0a',
-                    border: '2px solid #00ff9f',
-                    marginBottom: '10px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <div>
-                      <strong>{item.product.name}</strong>
-                      <div>Cantidad: {item.quantity}</div>
-                      ${(item.product.price * item.quantity).toLocaleString('es-CL')}
-
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div
-              style={{
-                fontSize: '28px',
-                padding: '20px',
-                backgroundColor: '#0a0a0a',
-                border: '2px solid #00ff9f',
-                textAlign: 'right',
-              }}
-            >
+            <h2 style={{ textAlign: 'right' }}>
               TOTAL: ${selectedOrder.total.toLocaleString('es-CL')}
-            </div>
+            </h2>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 // src/components/CustomAlert.tsx
 
 import React from 'react';
-import type { AlertData } from '../types';
+import type { AlertData } from '../types/index';
 
 interface CustomAlertProps {
   alertData: AlertData | null;

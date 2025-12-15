@@ -1,6 +1,6 @@
-// src/services/products.service.ts
+// src/services/producs.service.ts
 
-import type { Product } from '../types';
+import type { Product } from '../types/index';
 
 
 export const PRODUCTS: Product[] = [

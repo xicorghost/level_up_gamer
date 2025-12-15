@@ -5,49 +5,54 @@ import type { UserData } from '../../types';
 
 const MOCK_USERS: UserData[] = [
   {
-    name: 'Juan Pérez',
+    nombre: 'Juan Pérez',
     email: 'juan.perez@duoc.cl',
-    age: 22,
-    isDuoc: true,
-    points: 1500,
-    level: 4,
-    referralCode: 'LUGJP2025',
+    edad: 22,
+    duoc: true,
+    descuento: 0.2,
+    puntos: 1500,
+    nivel: 4,
+    codigoReferido: 'LUGJP2025',
   },
   {
-    name: 'María González',
+    nombre: 'María González',
     email: 'maria.gonzalez@gmail.com',
-    age: 28,
-    isDuoc: false,
-    points: 750,
-    level: 2,
-    referralCode: 'LUGMG2025',
+    edad: 28,
+    duoc: false,
+    descuento: 0,
+    puntos: 750,
+    nivel: 2,
+    codigoReferido: 'LUGMG2025',
   },
   {
-    name: 'Pedro Silva',
+    nombre: 'Pedro Silva',
     email: 'pedro.silva@duoc.cl',
-    age: 20,
-    isDuoc: true,
-    points: 2300,
-    level: 5,
-    referralCode: 'LUGPS2025',
+    edad: 20,
+    duoc: true,
+    descuento: 0.2,
+    puntos: 2300,
+    nivel: 5,
+    codigoReferido: 'LUGPS2025',
   },
   {
-    name: 'Ana López',
+    nombre: 'Ana López',
     email: 'ana.lopez@gmail.com',
-    age: 25,
-    isDuoc: false,
-    points: 500,
-    level: 1,
-    referralCode: 'LUGAL2025',
+    edad: 25,
+    duoc: false,
+    descuento: 0,
+    puntos: 500,
+    nivel: 1,
+    codigoReferido: 'LUGAL2025',
   },
   {
-    name: 'Carlos Rojas',
+    nombre: 'Carlos Rojas',
     email: 'carlos.rojas@duoc.cl',
-    age: 23,
-    isDuoc: true,
-    points: 3100,
-    level: 7,
-    referralCode: 'LUGCR2025',
+    edad: 23,
+    duoc: true,
+    descuento: 0.2,
+    puntos: 3100,
+    nivel: 7,
+    codigoReferido: 'LUGCR2025',
   },
 ];
 
@@ -57,7 +62,7 @@ export const UserManagement: React.FC = () => {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -133,13 +138,13 @@ export const UserManagement: React.FC = () => {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user, index) => (
                 <tr key={index}>
-                  <td style={tableCellStyle}>{user.name}</td>
+                  <td style={tableCellStyle}>{user.nombre}</td>
                   <td style={tableCellStyle}>{user.email}</td>
-                  <td style={tableCellStyle}>{user.age || 'N/A'}</td>
-                  <td style={tableCellStyle}>{user.points}</td>
-                  <td style={tableCellStyle}>{user.level}</td>
+                  <td style={tableCellStyle}>{user.edad || 'N/A'}</td>
+                  <td style={tableCellStyle}>{user.puntos}</td>
+                  <td style={tableCellStyle}>{user.nivel}</td>
                   <td style={tableCellStyle}>
-                    {user.isDuoc ? (
+                    {user.duoc ? (
                       <span
                         style={{
                           backgroundColor: '#00ff9f',
@@ -155,7 +160,7 @@ export const UserManagement: React.FC = () => {
                       <span style={{ opacity: 0.5 }}>NO</span>
                     )}
                   </td>
-                  <td style={tableCellStyle}>{user.referralCode}</td>
+                  <td style={tableCellStyle}>{user.codigoReferido}</td>
                 </tr>
               ))
             ) : (
@@ -190,7 +195,7 @@ export const UserManagement: React.FC = () => {
         >
           <h4 style={{ fontSize: '20px', marginBottom: '10px' }}>USUARIOS DUOC</h4>
           <p style={{ fontSize: '36px', color: '#00ff9f', textShadow: '0 0 10px #00ff9f' }}>
-            {users.filter((u) => u.isDuoc).length}
+            {users.filter((u) => u.duoc).length}
           </p>
         </div>
 
@@ -204,7 +209,7 @@ export const UserManagement: React.FC = () => {
         >
           <h4 style={{ fontSize: '20px', marginBottom: '10px' }}>USUARIOS REGULARES</h4>
           <p style={{ fontSize: '36px', color: '#00ff9f', textShadow: '0 0 10px #00ff9f' }}>
-            {users.filter((u) => !u.isDuoc).length}
+            {users.filter((u) => !u.duoc).length}
           </p>
         </div>
 
@@ -218,7 +223,7 @@ export const UserManagement: React.FC = () => {
         >
           <h4 style={{ fontSize: '20px', marginBottom: '10px' }}>PUNTOS TOTALES</h4>
           <p style={{ fontSize: '36px', color: '#00ff9f', textShadow: '0 0 10px #00ff9f' }}>
-            {users.reduce((sum, user) => sum + user.points, 0).toLocaleString('es-CL')}
+            {users.reduce((sum, user) => sum + user.puntos, 0).toLocaleString('es-CL')}
           </p>
         </div>
 
@@ -232,7 +237,7 @@ export const UserManagement: React.FC = () => {
         >
           <h4 style={{ fontSize: '20px', marginBottom: '10px' }}>NIVEL PROMEDIO</h4>
           <p style={{ fontSize: '36px', color: '#00ff9f', textShadow: '0 0 10px #00ff9f' }}>
-            {(users.reduce((sum, user) => sum + user.level, 0) / users.length).toFixed(1)}
+            {(users.reduce((sum, user) => sum + user.nivel, 0) / users.length).toFixed(1)}
           </p>
         </div>
       </div>

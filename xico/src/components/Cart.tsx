@@ -47,7 +47,7 @@ export default function CartPage({
                 <div>
                   <strong>{item.product.name}</strong><br />
                   ${price.toLocaleString('es-CL')} x {item.quantity}
-                  {currentUser?.isDuoc && (
+                  {currentUser?.duoc && (
                     <span style={{ fontSize: '12px', marginLeft: '10px' }}>
                       (Desc. Duoc aplicado)
                     </span>
