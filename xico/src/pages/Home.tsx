@@ -1,5 +1,6 @@
 // src/pages/Home.tsx
 
+<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import type { 
@@ -10,6 +11,11 @@ import type {
     BoletaResult 
 } from '../types';
 
+=======
+import React, { useState } from 'react';
+//import type { Section, Product, Order } from '../types';
+import type { Section, Product, CartItem } from '../types/index';
+>>>>>>> c93ff2d886c5542de9ae18fd0f468c0a4382404f
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { ProductCard } from '../components/ProductCard';

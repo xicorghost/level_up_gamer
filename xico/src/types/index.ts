@@ -1,9 +1,14 @@
+<<<<<<< HEAD
 //Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 // src/types/admin/index.ts
 
 export type Section = 'home' | 'products' | 'cart' | 'profile' | 'community' | 'checkout' | 'result';
 
+=======
+//types/index.ts
+//Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+>>>>>>> c93ff2d886c5542de9ae18fd0f468c0a4382404f
 // ===== PRODUCT =====
 export interface Product {
   id?: number;

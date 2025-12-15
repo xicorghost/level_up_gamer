@@ -8,9 +8,19 @@ import {
 import type { Product } from "../../types";
 import styles from "../../styles/ProductManagement.module.css";
 
+<<<<<<< HEAD
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+=======
+import React, { useState } from 'react';
+import type { Product } from '../../types/index';
+import { PRODUCTS, CATEGORIES } from '../../services/products.service';
+
+export const ProductManagement: React.FC = () => {
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  const [showAddForm, setShowAddForm] = useState(false);
+>>>>>>> c93ff2d886c5542de9ae18fd0f468c0a4382404f
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState<Product>({
     code: "",
